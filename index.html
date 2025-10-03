@@ -272,8 +272,10 @@
         .challenge-header {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             margin-bottom: 30px;
             gap: 20px;
+            flex-wrap: wrap;
         }
 
         .btn-back {
@@ -414,9 +416,29 @@
             transform: translateY(-3px);
             box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
         }
+        
+        /* Estilos para el temporizador del juego */
+        .game-timer {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #fff;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            padding: 10px 20px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            text-align: center;
+            margin: 0 auto 20px;
+        }
+
 
         /* Pantalla de victoria */
         #victory-screen {
+            text-align: center;
+            padding: 60px 40px;
+        }
+        
+        /* Pantalla de Game Over */
+        #game-over-screen {
             text-align: center;
             padding: 60px 40px;
         }
@@ -440,6 +462,13 @@
             font-size: 1.5rem;
             color: #333;
             margin-bottom: 30px;
+        }
+        
+        .game-over-message {
+            font-size: 1.3rem;
+            color: #666;
+            margin-top: 20px;
+            font-style: italic;
         }
 
         .victory-stats {
@@ -877,13 +906,14 @@
             <h1 class="title">🔐 ESCAPE ROOM</h1>
             <h2 class="subtitle">Kwonledge Bowl</h2>
             <p class="description">Completa los 10 enigmas para escapar. ¡Puedes elegir el orden que prefieras!</p>
-            <p class="description" style="color: #f44336; font-weight: bold;">⚠️ Cada respuesta incorrecta suma 20 segundos de penalización</p>
+            <p class="description" style="color: #f44336; font-weight: bold;">⚠️ Cada respuesta incorrecta suma 60 segundos de penalización</p>
             <button class="btn-start" onclick="startGame()">Comenzar Aventura</button>
         </div>
 
         <div id="challenge-selection" class="screen">
             <div class="header">
                 <h2>Selecciona tu Desafío</h2>
+                <div id="game-timer-selection" class="game-timer">Tiempo Restante: 45:00</div>
                 <div class="progress-bar">
                     <div class="progress-fill" id="progress-fill"></div>
                     <span class="progress-text" id="progress-text">0/10 completados</span>
@@ -906,6 +936,7 @@
             <div class="challenge-header">
                 <button class="btn-back" onclick="backToSelection()">← Volver</button>
                 <h3 id="challenge-title"></h3>
+                <div id="game-timer-challenge" class="game-timer">Tiempo Restante: 45:00</div>
             </div>
 
             <div class="challenge-content">
@@ -962,6 +993,18 @@
                 <button class="btn-restart" onclick="restartGame()">Jugar de Nuevo</button>
             </div>
         </div>
+        
+        <div id="game-over-screen" class="screen">
+            <div class="game-over-content">
+                <h1 class="victory-title" style="color: #f44336;">¡TIEMPO TERMINADO!</h1>
+                <p class="victory-message">El reloj ha llegado a cero, pero no te rindas.</p>
+                <div class="victory-stats">
+                    <p>🎯 Enigmas completados: <span id="game-over-score">0</span>/10</p>
+                </div>
+                <p class="game-over-message">"Los errores son solo la oportunidad de comenzar de nuevo, Aprende de ellos."</p>
+                <button class="btn-restart" onclick="restartGame()">Intentar de Nuevo</button>
+            </div>
+        </div>
 
         <div id="penalty-overlay" class="penalty-overlay">
             <div class="penalty-content">
@@ -969,7 +1012,7 @@
                 <h2>Penalización Activa</h2>
                 <p>Debes esperar antes de continuar</p>
                 <div class="penalty-timer">
-                    <span id="penalty-countdown">20</span>
+                    <span id="penalty-countdown">60</span>
                     <span class="penalty-label">segundos</span>
                 </div>
             </div>
@@ -986,9 +1029,11 @@
             currentChallenge: null,
             startTime: null,
             selectedAnswer: null,
-            penaltyTime: 0, // Tiempo de penalización en milisegundos
-            blockedChallenges: new Map(), // Desafíos bloqueados con su tiempo de fin
-            collectedLetters: [] // Letras recolectadas en orden
+            penaltyTime: 0, 
+            blockedChallenges: new Map(),
+            collectedLetters: [],
+            gameTimerInterval: null, // NUEVO: Intervalo para el temporizador del juego
+            gameEndTime: null // NUEVO: Hora de finalización del juego
         };
 
         // Definición de los 10 enigmas
@@ -1144,9 +1189,43 @@
             gameState.startTime = Date.now();
             gameState.completedChallenges.clear();
             gameState.penaltyTime = 0;
+            
+            // NUEVO: Iniciar temporizador de 45 minutos
+            const gameDuration = 45 * 60 * 1000;
+            gameState.gameEndTime = gameState.startTime + gameDuration;
+            if (gameState.gameTimerInterval) clearInterval(gameState.gameTimerInterval);
+            gameState.gameTimerInterval = setInterval(updateGameTimer, 1000);
+            updateGameTimer(); // Llamada inicial para mostrar 45:00
+            
             showScreen('challenge-selection');
             renderChallenges();
             updateProgress();
+        }
+
+        // NUEVO: Actualizar el temporizador principal del juego
+        function updateGameTimer() {
+            const now = Date.now();
+            const remainingTime = Math.max(0, gameState.gameEndTime - now);
+            const minutes = Math.floor((remainingTime / 1000) / 60);
+            const seconds = Math.floor((remainingTime / 1000) % 60);
+            const formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+
+            // Actualizar en ambas pantallas
+            const timerSelectionEl = document.getElementById('game-timer-selection');
+            const timerChallengeEl = document.getElementById('game-timer-challenge');
+            if(timerSelectionEl) timerSelectionEl.textContent = `Tiempo Restante: ${formattedTime}`;
+            if(timerChallengeEl) timerChallengeEl.textContent = `Tiempo Restante: ${formattedTime}`;
+
+            if (remainingTime <= 0) {
+                showGameOverScreen();
+            }
+        }
+        
+        // NUEVO: Mostrar pantalla de Game Over
+        function showGameOverScreen() {
+            clearInterval(gameState.gameTimerInterval);
+            document.getElementById('game-over-score').textContent = gameState.completedChallenges.size;
+            showScreen('game-over-screen');
         }
 
         // Mostrar pantalla
@@ -1196,7 +1275,6 @@
                 grid.appendChild(card);
             });
             
-            // Actualizar timers de desafíos bloqueados cada segundo
             if (gameState.blockedChallenges.size > 0) {
                 setTimeout(() => renderChallenges(), 1000);
             }
@@ -1207,15 +1285,12 @@
             const challenge = challenges.find(c => c.id === challengeId);
             if (!challenge || gameState.completedChallenges.has(challengeId)) return;
 
-            // Verificar si este desafío está bloqueado
             if (gameState.blockedChallenges.has(challengeId)) {
                 const endTime = gameState.blockedChallenges.get(challengeId);
                 if (Date.now() < endTime) {
-                    // Aún está bloqueado, mostrar overlay
                     showChallengeBlockedOverlay(challengeId);
                     return;
                 } else {
-                    // Ya terminó el bloqueo, removerlo
                     gameState.blockedChallenges.delete(challengeId);
                 }
             }
@@ -1246,7 +1321,6 @@
             document.getElementById('feedback').textContent = '';
             document.getElementById('feedback').className = 'feedback';
             
-            // Asegurarse de que el botón de submit esté habilitado
             const submitBtn = document.getElementById('submit-btn');
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -1279,7 +1353,6 @@
             const isCorrect = userAnswer === challenge.answer;
 
             if (isCorrect) {
-                // Agregar letra recolectada
                 gameState.collectedLetters.push({
                     id: challenge.id,
                     letter: challenge.rewardLetter
@@ -1289,7 +1362,6 @@
                 feedback.className = 'feedback correct';
                 gameState.completedChallenges.add(challenge.id);
                 
-                // Deshabilitar botones
                 document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
                 document.getElementById('submit-btn').disabled = true;
                 
@@ -1297,7 +1369,6 @@
                     backToSelection();
                 }, 2500);
             } else {
-                // Iniciar penalización de 20 segundos
                 startPenalty();
             }
         }
@@ -1305,20 +1376,18 @@
         // Iniciar penalización
         function startPenalty() {
             const challengeId = gameState.currentChallenge.id;
-            const endTime = Date.now() + 20000;
+            const penaltyDuration = 60000; // MODIFICADO: 60 segundos
+            const endTime = Date.now() + penaltyDuration;
             
-            gameState.penaltyTime += 20000; // 20 segundos en milisegundos
+            gameState.penaltyTime += penaltyDuration; 
             gameState.blockedChallenges.set(challengeId, endTime);
             
-            // Deshabilitar botones durante la penalización
             document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
             document.getElementById('submit-btn').disabled = true;
             
-            // Deseleccionar la respuesta incorrecta
             document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
             gameState.selectedAnswer = null;
             
-            // Iniciar cuenta regresiva
             updatePenaltyCountdown(challengeId, endTime);
         }
 
@@ -1328,9 +1397,8 @@
             const now = Date.now();
             const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
             
-            // Verificar si aún estamos en el mismo desafío
             if (!gameState.currentChallenge || gameState.currentChallenge.id !== challengeId) {
-                return; // Salir si cambiamos de desafío
+                return;
             }
             
             if (remaining > 0) {
@@ -1339,15 +1407,12 @@
                 
                 setTimeout(() => updatePenaltyCountdown(challengeId, endTime), 100);
             } else {
-                // Penalización terminada
                 gameState.blockedChallenges.delete(challengeId);
                 
-                // Solo rehabilitar si seguimos en el mismo desafío
                 if (gameState.currentChallenge && gameState.currentChallenge.id === challengeId) {
                     feedback.textContent = '✅ Puedes intentar de nuevo';
                     feedback.className = 'feedback';
                     
-                    // Rehabilitar botones
                     document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
                     document.getElementById('submit-btn').disabled = false;
                     
@@ -1378,13 +1443,8 @@
             if (gameState.collectedLetters.length === 0) {
                 lettersContainer.innerHTML = '<p class="letters-hint">Completa desafíos para recolectar letras</p>';
             } else {
-                // Obtener solo las letras (sin orden)
                 const letters = gameState.collectedLetters.map(item => item.letter);
-                
-                // Mezclar las letras aleatoriamente para no dar pistas del orden
                 const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
-                
-                // Generar HTML mostrando las letras mezcladas
                 const lettersHTML = shuffledLetters.map(letter => 
                     `<span class="letter-badge">${letter}</span>`
                 ).join('');
@@ -1411,7 +1471,6 @@
         function updateBlockedOverlayCountdown(challengeId, endTime) {
             const overlay = document.getElementById('penalty-overlay');
             const countdownEl = document.getElementById('penalty-countdown');
-            
             if (!overlay || !countdownEl) return;
             
             const now = Date.now();
@@ -1423,7 +1482,7 @@
             } else {
                 gameState.blockedChallenges.delete(challengeId);
                 overlay.style.display = 'none';
-                renderChallenges(); // Re-renderizar para quitar el estado bloqueado
+                renderChallenges();
             }
         }
 
@@ -1439,13 +1498,8 @@
 
         // Finalizar juego - Mostrar pantalla de palabra secreta
         function finishGame() {
-            // Obtener todas las letras recolectadas
             const letters = gameState.collectedLetters.map(item => item.letter);
-            
-            // Mezclar las letras aleatoriamente para el desafío final
             const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
-            
-            // Generar HTML mostrando las letras mezcladas
             const lettersHTML = shuffledLetters.map(letter => 
                 `<span class="letter-badge-large">${letter}</span>`
             ).join('');
@@ -1485,6 +1539,7 @@
 
         // Mostrar pantalla de victoria final
         function showVictoryScreen() {
+            clearInterval(gameState.gameTimerInterval); // Detener temporizador
             const endTime = Date.now();
             const elapsedTime = endTime - gameState.startTime;
             const totalTimeWithPenalty = Math.floor((elapsedTime + gameState.penaltyTime) / 1000);
@@ -1505,12 +1560,17 @@
 
         // Reiniciar juego
         function restartGame() {
+            if (gameState.gameTimerInterval) clearInterval(gameState.gameTimerInterval);
+            
             gameState.completedChallenges.clear();
             gameState.currentChallenge = null;
             gameState.selectedAnswer = null;
             gameState.penaltyTime = 0;
             gameState.blockedChallenges.clear();
             gameState.collectedLetters = [];
+            gameState.gameTimerInterval = null;
+            gameState.gameEndTime = null;
+            
             document.getElementById('finish-btn').style.display = 'none';
             const overlay = document.getElementById('penalty-overlay');
             if (overlay) overlay.style.display = 'none';
@@ -1524,5 +1584,4 @@
         });
     </script>
 </body>
-
 </html>
