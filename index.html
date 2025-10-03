@@ -1,0 +1,1527 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room - Cultura General</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        /* Efecto de rejas de cárcel en el fondo */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                repeating-linear-gradient(
+                    90deg,
+                    transparent,
+                    transparent 60px,
+                    rgba(0, 0, 0, 0.3) 60px,
+                    rgba(0, 0, 0, 0.3) 68px,
+                    rgba(0, 0, 0, 0.4) 68px,
+                    rgba(0, 0, 0, 0.4) 72px,
+                    rgba(0, 0, 0, 0.3) 72px,
+                    rgba(0, 0, 0, 0.3) 80px
+                ),
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 100px,
+                    rgba(0, 0, 0, 0.2) 100px,
+                    rgba(0, 0, 0, 0.2) 104px
+                );
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, transparent 0%, rgba(0, 0, 0, 0.2) 100%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .screen {
+            display: none;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 0.5s ease;
+        }
+
+        .screen.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Pantalla de inicio */
+        #start-screen {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .title {
+            font-size: 4rem;
+            color: #dc2626;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .subtitle {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        .description {
+            font-size: 1.2rem;
+            color: #666;
+            margin-bottom: 40px;
+            line-height: 1.6;
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
+        }
+
+        /* Pantalla de selección */
+        .header {
+            margin-bottom: 30px;
+        }
+
+        .header h2 {
+            color: #333;
+            font-size: 2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 50px;
+            height: 30px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #dc2626 0%, #991b1b 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 50px;
+        }
+
+        .progress-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #333;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
+        .challenges-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .challenge-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .challenge-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            border-color: #dc2626;
+        }
+
+        .challenge-card.completed {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            cursor: default;
+        }
+
+        .challenge-card.completed::after {
+            content: '✓';
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #4caf50;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .challenge-card.locked {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .challenge-card.blocked {
+            background: linear-gradient(135deg, #ffb3ba 0%, #ffdfba 100%);
+            cursor: pointer;
+            border: 3px solid #f44336;
+            opacity: 0.8;
+        }
+
+        .challenge-card.blocked:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(244, 67, 54, 0.3);
+            border-color: #d32f2f;
+        }
+
+        .blocked-timer {
+            margin-top: 10px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #d32f2f;
+            animation: pulse 1s infinite;
+        }
+
+        .challenge-number {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .challenge-name {
+            font-size: 1rem;
+            color: #333;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .challenge-category {
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        /* Pantalla de desafío */
+        .challenge-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            gap: 20px;
+        }
+
+        .btn-back {
+            background: #e0e0e0;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.3s ease;
+        }
+
+        .btn-back:hover {
+            background: #d0d0d0;
+        }
+
+        #challenge-title {
+            color: #333;
+            font-size: 1.8rem;
+        }
+
+        .challenge-content {
+            text-align: center;
+        }
+
+        .challenge-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+        }
+
+        .challenge-question {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        #challenge-input-area {
+            margin-bottom: 20px;
+        }
+
+        .answer-input {
+            width: 100%;
+            max-width: 500px;
+            padding: 15px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            transition: border-color 0.3s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .option-btn {
+            background: #f5f7fa;
+            border: 2px solid #ddd;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .option-btn:hover {
+            background: #e8eaf0;
+            border-color: #dc2626;
+        }
+
+        .option-btn.selected {
+            background: #dc2626;
+            color: white;
+            border-color: #dc2626;
+        }
+
+        .feedback {
+            min-height: 30px;
+            margin: 20px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .feedback.correct {
+            color: #4caf50;
+        }
+
+        .feedback.incorrect {
+            color: #f44336;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-finish {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-weight: bold;
+            margin: 30px auto;
+            display: block;
+        }
+
+        .btn-finish:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
+        }
+
+        /* Pantalla de victoria */
+        #victory-screen {
+            text-align: center;
+            padding: 60px 40px;
+        }
+
+        .victory-content {
+            animation: celebrate 1s ease;
+        }
+
+        @keyframes celebrate {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .victory-title {
+            font-size: 3rem;
+            color: #dc2626;
+            margin-bottom: 20px;
+        }
+
+        .victory-message {
+            font-size: 1.5rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .victory-stats {
+            background: #f5f7fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .victory-stats p {
+            font-size: 1.2rem;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .btn-restart {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.2rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-restart:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
+        }
+
+        /* Overlay de penalización */
+        .penalty-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .penalty-content {
+            background: white;
+            border-radius: 20px;
+            padding: 50px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: scaleIn 0.3s ease;
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .penalty-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .penalty-content h2 {
+            color: #f44336;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .penalty-content p {
+            color: #666;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+        }
+
+        .penalty-timer {
+            background: linear-gradient(135deg, #f44336 0%, #e91e63 100%);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #penalty-countdown {
+            font-size: 5rem;
+            font-weight: bold;
+            color: white;
+            line-height: 1;
+        }
+
+        .penalty-label {
+            font-size: 1.2rem;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .feedback.penalty-active {
+            font-size: 1.3rem;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .option-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Letras recolectadas */
+        .collected-letters {
+            background: #f5f7fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .letters-hint {
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+        }
+
+        .letters-hint-small {
+            color: #991b1b;
+            font-size: 0.95rem;
+            margin-top: 15px;
+            font-style: italic;
+        }
+
+        .letters-list {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .letter-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 10px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+            animation: revealLetter 0.5s ease;
+        }
+
+        .letter-badge-large {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 2rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+        }
+
+        .letter-slot {
+            display: inline-block;
+            width: 40px;
+            height: 50px;
+            line-height: 50px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .letter-slot.revealed {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            box-shadow: 0 4px 10px rgba(220, 38, 38, 0.3);
+            animation: revealLetter 0.5s ease;
+        }
+
+        .letter-slot.hidden {
+            background: #e0e0e0;
+            color: #999;
+            border: 2px dashed #bbb;
+        }
+
+        @keyframes revealLetter {
+            from {
+                transform: scale(0) rotate(180deg);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+        }
+
+        .reward-letter {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 10px;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 10px;
+            animation: popIn 0.5s ease;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+            100% {
+                transform: scale(1);
+            }
+        }
+
+        /* Pantalla de palabra secreta */
+        .word-challenge-content {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .word-title {
+            font-size: 3rem;
+            color: #dc2626;
+            margin-bottom: 20px;
+        }
+
+        .word-message {
+            font-size: 1.3rem;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .final-letters-container {
+            background: #f5f7fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .letters-instruction {
+            color: #dc2626;
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .final-letters-display {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .word-input-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .word-input {
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+            font-size: 1.5rem;
+            text-align: center;
+            border: 3px solid #dc2626;
+            border-radius: 15px;
+            text-transform: uppercase;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        .word-input:focus {
+            outline: none;
+            border-color: #991b1b;
+            box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+        }
+
+        .btn-check-word {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: none;
+            padding: 20px 50px;
+            font-size: 1.3rem;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            font-weight: bold;
+        }
+
+        .btn-check-word:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(220, 38, 38, 0.4);
+        }
+
+        .word-feedback {
+            min-height: 40px;
+            font-size: 1.3rem;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        .word-feedback.correct {
+            color: #4caf50;
+        }
+
+        .word-feedback.incorrect {
+            color: #f44336;
+        }
+
+        .victory-word {
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .victory-word p {
+            color: white;
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .secret-word {
+            font-size: 2rem;
+            font-weight: bold;
+            letter-spacing: 3px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 2.5rem;
+            }
+
+            .subtitle {
+                font-size: 1.5rem;
+            }
+
+            .challenges-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                gap: 15px;
+            }
+
+            .challenge-card {
+                padding: 20px;
+            }
+
+            .screen {
+                padding: 20px;
+            }
+
+            .penalty-content {
+                padding: 30px;
+                margin: 20px;
+            }
+
+            #penalty-countdown {
+                font-size: 4rem;
+            }
+
+            .penalty-icon {
+                font-size: 4rem;
+            }
+
+            .letter-slot {
+                width: 35px;
+                height: 45px;
+                line-height: 45px;
+                font-size: 1.2rem;
+            }
+
+            .letter-slot-large {
+                width: 40px;
+                height: 50px;
+                line-height: 50px;
+                font-size: 1.5rem;
+            }
+
+            .word-title {
+                font-size: 2rem;
+            }
+
+            .word-message {
+                font-size: 1.1rem;
+            }
+
+            .word-input {
+                font-size: 1.2rem;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="start-screen" class="screen active">
+            <h1 class="title">🔐 ESCAPE ROOM</h1>
+            <h2 class="subtitle">Kwonledge Bowl</h2>
+            <p class="description">Completa los 10 enigmas para escapar. ¡Puedes elegir el orden que prefieras!</p>
+            <p class="description" style="color: #f44336; font-weight: bold;">⚠️ Cada respuesta incorrecta suma 20 segundos de penalización</p>
+            <button class="btn-start" onclick="startGame()">Comenzar Aventura</button>
+        </div>
+
+        <div id="challenge-selection" class="screen">
+            <div class="header">
+                <h2>Selecciona tu Desafío</h2>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress-fill"></div>
+                    <span class="progress-text" id="progress-text">0/10 completados</span>
+                </div>
+            </div>
+
+            <div id="collected-letters" class="collected-letters">
+                <p class="letters-hint">Completa desafíos para recolectar letras</p>
+            </div>
+
+            <div class="challenges-grid" id="challenges-grid">
+                </div>
+
+            <button class="btn-finish" id="finish-btn" onclick="finishGame()" style="display: none;">
+                🎉 ¡Finalizar Escape Room!
+            </button>
+        </div>
+
+        <div id="challenge-screen" class="screen">
+            <div class="challenge-header">
+                <button class="btn-back" onclick="backToSelection()">← Volver</button>
+                <h3 id="challenge-title"></h3>
+            </div>
+
+            <div class="challenge-content">
+                <div class="challenge-icon" id="challenge-icon"></div>
+                <p class="challenge-question" id="challenge-question"></p>
+                
+                <div id="challenge-input-area"></div>
+
+                <div class="feedback" id="feedback"></div>
+                
+                <button class="btn-submit" id="submit-btn" onclick="checkAnswer()">Verificar Respuesta</button>
+            </div>
+        </div>
+
+        <div id="word-challenge-screen" class="screen">
+            <div class="word-challenge-content">
+                <h1 class="word-title">🔑 ¡Último Desafío!</h1>
+                <p class="word-message">Has recolectado todas las letras. Ahora ordénalas para formar la palabra secreta de 10 letras:</p>
+                
+                <div class="final-letters-container">
+                    <p class="letters-instruction">Letras disponibles (en desorden):</p>
+                    <div id="final-letters-display" class="final-letters-display">
+                        </div>
+                </div>
+
+                <div class="word-input-container">
+                    <input 
+                        type="text" 
+                        id="secret-word-input" 
+                        class="word-input" 
+                        placeholder="Escribe la palabra secreta..."
+                        maxlength="10"
+                        onkeypress="if(event.key === 'Enter') checkSecretWord()"
+                    >
+                    <button class="btn-check-word" onclick="checkSecretWord()">Verificar Palabra</button>
+                </div>
+
+                <div id="word-feedback" class="word-feedback"></div>
+            </div>
+        </div>
+
+        <div id="victory-screen" class="screen">
+            <div class="victory-content">
+                <h1 class="victory-title">🎊 ¡FELICITACIONES! 🎊</h1>
+                <p class="victory-message">Has completado todos los desafíos y escapado con éxito</p>
+                <div class="victory-word">
+                    <p>🔑 Palabra secreta: <span id="secret-word-reveal" class="secret-word"></span></p>
+                </div>
+                <div class="victory-stats">
+                    <p>⏱️ Tiempo total: <span id="total-time"></span></p>
+                    <p>⚠️ Penalización por errores: <span id="penalty-time"></span></p>
+                    <p>🎯 Enigmas completados: 10/10</p>
+                </div>
+                <button class="btn-restart" onclick="restartGame()">Jugar de Nuevo</button>
+            </div>
+        </div>
+
+        <div id="penalty-overlay" class="penalty-overlay">
+            <div class="penalty-content">
+                <div class="penalty-icon">⏱️</div>
+                <h2>Penalización Activa</h2>
+                <p>Debes esperar antes de continuar</p>
+                <div class="penalty-timer">
+                    <span id="penalty-countdown">20</span>
+                    <span class="penalty-label">segundos</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Palabra secreta que deben formar
+        const SECRET_WORD = 'INTEGRIDAD'; // 10 letras
+
+        // Estado del juego
+        let gameState = {
+            completedChallenges: new Set(),
+            currentChallenge: null,
+            startTime: null,
+            selectedAnswer: null,
+            penaltyTime: 0, // Tiempo de penalización en milisegundos
+            blockedChallenges: new Map(), // Desafíos bloqueados con su tiempo de fin
+            collectedLetters: [] // Letras recolectadas en orden
+        };
+
+        // Definición de los 10 enigmas
+        const challenges = [
+            {
+                id: 1,
+                icon: '❓',
+                name: 'Enigma 1',
+                category: '',
+                question: 'En una clase hay más de 20 y menos de 30 alumnos. Si se forman 4 grupos de 4 alumnos, sobran 2 y si se agrupan 5 de 5, sobra 1. ¿Cuántos alumnos hay en la clase?',
+                type: 'multiple',
+                options: ['22', '24', '28', '26'],
+                answer: '26',
+                rewardLetter: 'I'
+            },
+            {
+                id: 2,
+                icon: '❓',
+                name: 'Enigma 2',
+                category: '',
+                question: 'Kelly quiere mejorar sus habilidades y avanzar en su desarrollo profesional. Ella identifica actividades, cursos y proyectos que puede realizar por su cuenta para fortalecer su perfil académico y laboral. ¿Qué está practicando Kelly?',
+                type: 'multiple',
+                options: ['Autogestión de oportunidades', 'Esperar a que alguien más le dé oportunidades', 'Solo hacer tareas obligatorias en la escuela', 'Participar únicamente en actividades recreativas sin aprendizaje'],
+                answer: 'Autogestión de oportunidades',
+                rewardLetter: 'N'
+            },
+            {
+                id: 3,
+                icon: '❓',
+                name: 'Enigma 3',
+                category: '',
+                question: 'Tienes una hoja de Excel con 800 registros de ventas mensuales. Necesitas calcular la comisión solo para vendedores que: vendieron más de $5,000 Y trabajan en las sucursales "Norte" o "Sur" Y tienen más de 6 meses de antigüedad. La comisión es del 8% sobre el monto de ventas. ¿Qué enfoque es más eficiente y escalable?',
+                type: 'multiple',
+                options: [
+                    'Filtrar manualmente las filas que cumplen las condiciones, copiarlas a una hoja nueva, usar fórmula simple =Monto*0.08 para cada una',
+                    'Usar fórmula =SI(Y(Monto>5000; Sucursal="Norte"; Antigüedad>6); Monto*0.08; 0)',
+                    'Crear una columna auxiliar para cada condición (una para monto, otra para sucursal, otra para antigüedad), multiplicar los tres resultados, luego calcular comisión',
+                    'Usar =SI(Y(Monto>5000; O(Sucursal="Norte"; Sucursal="Sur"); Antigüedad>6); Monto*0.08, 0)'
+                ],
+                answer: 'Usar =SI(Y(Monto>5000; O(Sucursal="Norte"; Sucursal="Sur"); Antigüedad>6); Monto*0.08, 0)',
+                rewardLetter: 'T'
+            },
+            {
+                id: 4,
+                icon: '❓',
+                name: 'Enigma 4',
+                category: '',
+                question: '¿Cuál oración está escrita correctamente?',
+                type: 'multiple',
+                options: [
+                    'El maestro nos pidió que le entregaramos la tarea mañana.',
+                    'El maestro nos pidió que le entregáramos la tarea mañana.',
+                    'El maestro nos pidio que le entregáramos la tarea mañana.'
+                ],
+                answer: 'El maestro nos pidió que le entregáramos la tarea mañana.',
+                rewardLetter: 'E'
+            },
+            {
+                id: 5,
+                icon: '❓',
+                name: 'Enigma 5',
+                category: '',
+                question: 'READ THE TEXT:\n\nDear Sir / Madam,\n\nI would like to apply for the job of tour leader for your Overland Africa tours. I have had lots of useful experience for this role.\n\nI have spent five months backpacking around Africa. In 2018, I visited Ethiopia, Kenya and Tanzania. I used local transport and organised my own accommodation, food and visas. I enjoyed meeting local people, learning about local traditions and visiting natural parks. I read and learned a lot about the culture and wildlife, and I even learned some Swahili and Afrikaans. This trip taught me to be independent and to organise travel arrangements.\n\nI have also worked as a leader at a children\'s summer camp in the south of England. I worked there in 2017. I led activities for children aged 9-12, including football, climbing and campfire songs and games. For this work, I received training in climbing instruction and first aid. During this time, I developed many useful skills. For example, I had to ensure the children were always safe and happy. I learned how to be helpful and positive, and I also learned ways to entertain people and help them make friends when they are with strangers.\n\nFinally, I have completed the Active Youth Challenge. I did this while I was at high school in 2016. To complete this challenge, I firstly had to volunteer with a local organisation. I helped at a social club for the elderly, where I chatted and played games with the members. The experience taught me to be patient and friendly. Secondly, I had to learn something by myself. I learned car mechanics. This taught me some useful, practical skills. Thirdly, I organised a four-day camping and hiking trip in the Scottish mountains with other students from my school. This experience taught me about camping equipment and how to deal with problems like bad weather and getting lost.\n\nI believe I have lots of useful experience to work as an Overland Tour Guide. I would love the opportunity to tell you more about my skills at an interview.\n\nYours faithfully,\nNicholas Rigby\n\nQUESTION: What job is Nicholas applying for?',
+                type: 'multiple',
+                options: [
+                    'Travel blogger',
+                    'Tour leader for Overland Africa tours',
+                    'Camp instructor in England',
+                    'Teacher of foreign languages'
+                ],
+                answer: 'Tour leader for Overland Africa tours',
+                rewardLetter: 'G'
+            },
+            {
+                id: 6,
+                icon: '❓',
+                name: 'Enigma 6',
+                category: '',
+                question: 'Un emprendedor decide vender productos ecológicos más caros que la competencia. ¿Qué estrategia debería justificar esta decisión?',
+                type: 'multiple',
+                options: [
+                    'Ofrecer valor agregado basado en la sostenibilidad.',
+                    'Ofrecer valor agregado basado en calidad, sostenibilidad y diferenciación.',
+                    'Competir en precio con pequeños emprendimiento.',
+                    'Competir en precio con grandes supermercados.'
+                ],
+                answer: 'Ofrecer valor agregado basado en calidad, sostenibilidad y diferenciación.',
+                rewardLetter: 'R'
+            },
+            {
+                id: 7,
+                icon: '❓',
+                name: 'Enigma 7',
+                category: '',
+                question: 'READ THE TEXT:\n\nDear Sir / Madam,\n\nI would like to apply for the job of tour leader for your Overland Africa tours. I have had lots of useful experience for this role.\n\nI have spent five months backpacking around Africa. In 2018, I visited Ethiopia, Kenya and Tanzania. I used local transport and organised my own accommodation, food and visas. I enjoyed meeting local people, learning about local traditions and visiting natural parks. I read and learned a lot about the culture and wildlife, and I even learned some Swahili and Afrikaans. This trip taught me to be independent and to organise travel arrangements.\n\nI have also worked as a leader at a children\'s summer camp in the south of England. I worked there in 2017. I led activities for children aged 9-12, including football, climbing and campfire songs and games. For this work, I received training in climbing instruction and first aid. During this time, I developed many useful skills. For example, I had to ensure the children were always safe and happy. I learned how to be helpful and positive, and I also learned ways to entertain people and help them make friends when they are with strangers.\n\nFinally, I have completed the Active Youth Challenge. I did this while I was at high school in 2016. To complete this challenge, I firstly had to volunteer with a local organisation. I helped at a social club for the elderly, where I chatted and played games with the members. The experience taught me to be patient and friendly. Secondly, I had to learn something by myself. I learned car mechanics. This taught me some useful, practical skills. Thirdly, I organised a four-day camping and hiking trip in the Scottish mountains with other students from my school. This experience taught me about camping equipment and how to deal with problems like bad weather and getting lost.\n\nI believe I have lots of useful experience to work as an Overland Tour Guide. I would love the opportunity to tell you more about my skills at an interview.\n\nYours faithfully,\nNicholas Rigby\n\nQUESTION: Which countries in Africa did Nicholas visit in 2018?',
+                type: 'multiple',
+                options: [
+                    'South Africa, Zimbabwe, and Namibia',
+                    'Ethiopia, Kenya, and Tanzania',
+                    'Nigeria, Ghana, and Uganda',
+                    'Morocco, Egypt, and Sudan'
+                ],
+                answer: 'Ethiopia, Kenya, and Tanzania',
+                rewardLetter: 'I'
+            },
+            {
+                id: 8,
+                icon: '❓',
+                name: 'Enigma 8',
+                category: '',
+                question: 'Estás creando una página web educativa con un menú de navegación que debe llevar a 5 secciones diferentes: Inicio (otra página), Acerca de (misma página), Cursos (misma página), Galería (misma página), y Contacto (otra página con formulario). ¿Qué estructura HTML es más adecuada?',
+                type: 'multiple',
+                options: [
+                    'Combinar enlaces externos para páginas separadas <a href="inicio.html"> y anclas internas para secciones de la misma página <a href="#acerca">, con IDs correspondientes en los elementos destino',
+                    'Crear 5 páginas HTML separadas, una para cada sección, usando <a href="pagina.html"> para todos los enlaces',
+                    'Usar solo anclas internas para todo: <a href="#inicio">, <a href="#contacto">, asumiendo que todo está en una página',
+                    'Usar JavaScript para todas las navegaciones'
+                ],
+                answer: 'Combinar enlaces externos para páginas separadas <a href="inicio.html"> y anclas internas para secciones de la misma página <a href="#acerca">, con IDs correspondientes en los elementos destino',
+                rewardLetter: 'D'
+            },
+            {
+                id: 9,
+                icon: '❓',
+                name: 'Enigma 9',
+                category: '',
+                question: 'Si una empresa emergente (startup) tiene un producto innovador pero no logra venderlo, el problema puede estar en…',
+                type: 'multiple',
+                options: [
+                    'El canal de distribución y la forma en que llega al cliente.',
+                    'El logotipo y los colores de la marca.',
+                    'La cantidad de empleados contratados, no es suficiente para ser atractivo la startup.',
+                    'El segmento de cliente no ha sido identificado de manera correcta.'
+                ],
+                answer: 'El canal de distribución y la forma en que llega al cliente.',
+                rewardLetter: 'A'
+            },
+            {
+                id: 10,
+                icon: '❓',
+                name: 'Enigma 10',
+                category: '',
+                question: 'En una librería venden un pack de 10 cuadernos y 6 carpetas por 100 pesos. También hay otro pack de 10 carpetas y 6 cuadernos por 92 pesos. ¿Cuánto vale cada cuaderno?',
+                type: 'multiple',
+                options: ['6 pesos', '8 pesos', '7 pesos', '5 pesos'],
+                answer: '7 pesos',
+                rewardLetter: 'D'
+            }
+        ];
+
+        // Iniciar el juego
+        function startGame() {
+            gameState.startTime = Date.now();
+            gameState.completedChallenges.clear();
+            gameState.penaltyTime = 0;
+            showScreen('challenge-selection');
+            renderChallenges();
+            updateProgress();
+        }
+
+        // Mostrar pantalla
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(screen => {
+                screen.classList.remove('active');
+            });
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        // Renderizar desafíos
+        function renderChallenges() {
+            const grid = document.getElementById('challenges-grid');
+            grid.innerHTML = '';
+
+            challenges.forEach(challenge => {
+                const card = document.createElement('div');
+                card.className = 'challenge-card';
+                
+                const isCompleted = gameState.completedChallenges.has(challenge.id);
+                const isBlocked = gameState.blockedChallenges.has(challenge.id);
+                
+                if (isCompleted) {
+                    card.classList.add('completed');
+                } else if (isBlocked) {
+                    card.classList.add('blocked');
+                }
+
+                let content = `
+                    <div class="challenge-number">${challenge.icon}</div>
+                    <div class="challenge-name">${challenge.name}</div>
+                    <div class="challenge-category">${challenge.category}</div>
+                `;
+                
+                if (isBlocked) {
+                    const endTime = gameState.blockedChallenges.get(challenge.id);
+                    const remaining = Math.max(0, Math.ceil((endTime - Date.now()) / 1000));
+                    content += `<div class="blocked-timer">🔒 ${remaining}s</div>`;
+                }
+                
+                card.innerHTML = content;
+
+                if (!isCompleted) {
+                    card.onclick = () => openChallenge(challenge.id);
+                }
+
+                grid.appendChild(card);
+            });
+            
+            // Actualizar timers de desafíos bloqueados cada segundo
+            if (gameState.blockedChallenges.size > 0) {
+                setTimeout(() => renderChallenges(), 1000);
+            }
+        }
+
+        // Abrir desafío
+        function openChallenge(challengeId) {
+            const challenge = challenges.find(c => c.id === challengeId);
+            if (!challenge || gameState.completedChallenges.has(challengeId)) return;
+
+            // Verificar si este desafío está bloqueado
+            if (gameState.blockedChallenges.has(challengeId)) {
+                const endTime = gameState.blockedChallenges.get(challengeId);
+                if (Date.now() < endTime) {
+                    // Aún está bloqueado, mostrar overlay
+                    showChallengeBlockedOverlay(challengeId);
+                    return;
+                } else {
+                    // Ya terminó el bloqueo, removerlo
+                    gameState.blockedChallenges.delete(challengeId);
+                }
+            }
+
+            gameState.currentChallenge = challenge;
+            gameState.selectedAnswer = null;
+
+            document.getElementById('challenge-title').textContent = challenge.name;
+            document.getElementById('challenge-icon').textContent = challenge.icon;
+            document.getElementById('challenge-question').textContent = challenge.question;
+
+            const inputArea = document.getElementById('challenge-input-area');
+            inputArea.innerHTML = '';
+
+            const optionsGrid = document.createElement('div');
+            optionsGrid.className = 'options-grid';
+
+            challenge.options.forEach(option => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = option;
+                btn.onclick = () => selectOption(option, btn);
+                optionsGrid.appendChild(btn);
+            });
+
+            inputArea.appendChild(optionsGrid);
+
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            
+            // Asegurarse de que el botón de submit esté habilitado
+            const submitBtn = document.getElementById('submit-btn');
+            if (submitBtn) {
+                submitBtn.disabled = false;
+            }
+
+            showScreen('challenge-screen');
+        }
+
+        // Seleccionar opción
+        function selectOption(option, btn) {
+            document.querySelectorAll('.option-btn').forEach(b => {
+                b.classList.remove('selected');
+            });
+            btn.classList.add('selected');
+            gameState.selectedAnswer = option;
+        }
+
+        // Verificar respuesta
+        function checkAnswer() {
+            const challenge = gameState.currentChallenge;
+            const feedback = document.getElementById('feedback');
+            const userAnswer = gameState.selectedAnswer;
+
+            if (!userAnswer) {
+                feedback.textContent = '⚠️ Por favor, selecciona una respuesta';
+                feedback.className = 'feedback incorrect';
+                return;
+            }
+
+            const isCorrect = userAnswer === challenge.answer;
+
+            if (isCorrect) {
+                // Agregar letra recolectada
+                gameState.collectedLetters.push({
+                    id: challenge.id,
+                    letter: challenge.rewardLetter
+                });
+                
+                feedback.innerHTML = `✅ ¡Correcto! Has ganado la letra: <span class="reward-letter">${challenge.rewardLetter}</span>`;
+                feedback.className = 'feedback correct';
+                gameState.completedChallenges.add(challenge.id);
+                
+                // Deshabilitar botones
+                document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+                document.getElementById('submit-btn').disabled = true;
+                
+                setTimeout(() => {
+                    backToSelection();
+                }, 2500);
+            } else {
+                // Iniciar penalización de 20 segundos
+                startPenalty();
+            }
+        }
+
+        // Iniciar penalización
+        function startPenalty() {
+            const challengeId = gameState.currentChallenge.id;
+            const endTime = Date.now() + 20000;
+            
+            gameState.penaltyTime += 20000; // 20 segundos en milisegundos
+            gameState.blockedChallenges.set(challengeId, endTime);
+            
+            // Deshabilitar botones durante la penalización
+            document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = true);
+            document.getElementById('submit-btn').disabled = true;
+            
+            // Deseleccionar la respuesta incorrecta
+            document.querySelectorAll('.option-btn').forEach(btn => btn.classList.remove('selected'));
+            gameState.selectedAnswer = null;
+            
+            // Iniciar cuenta regresiva
+            updatePenaltyCountdown(challengeId, endTime);
+        }
+
+        // Actualizar cuenta regresiva de penalización
+        function updatePenaltyCountdown(challengeId, endTime) {
+            const feedback = document.getElementById('feedback');
+            const now = Date.now();
+            const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+            
+            // Verificar si aún estamos en el mismo desafío
+            if (!gameState.currentChallenge || gameState.currentChallenge.id !== challengeId) {
+                return; // Salir si cambiamos de desafío
+            }
+            
+            if (remaining > 0) {
+                feedback.textContent = `❌ Respuesta incorrecta. Penalización: ${remaining} segundos`;
+                feedback.className = 'feedback incorrect penalty-active';
+                
+                setTimeout(() => updatePenaltyCountdown(challengeId, endTime), 100);
+            } else {
+                // Penalización terminada
+                gameState.blockedChallenges.delete(challengeId);
+                
+                // Solo rehabilitar si seguimos en el mismo desafío
+                if (gameState.currentChallenge && gameState.currentChallenge.id === challengeId) {
+                    feedback.textContent = '✅ Puedes intentar de nuevo';
+                    feedback.className = 'feedback';
+                    
+                    // Rehabilitar botones
+                    document.querySelectorAll('.option-btn').forEach(btn => btn.disabled = false);
+                    document.getElementById('submit-btn').disabled = false;
+                    
+                    setTimeout(() => {
+                        if (feedback) feedback.textContent = '';
+                    }, 2000);
+                }
+            }
+        }
+
+        // Volver a la selección
+        function backToSelection() {
+            showScreen('challenge-selection');
+            renderChallenges();
+            updateProgress();
+            updateLettersDisplay();
+
+            if (gameState.completedChallenges.size === challenges.length) {
+                document.getElementById('finish-btn').style.display = 'block';
+            }
+        }
+
+        // Actualizar visualización de letras recolectadas
+        function updateLettersDisplay() {
+            const lettersContainer = document.getElementById('collected-letters');
+            if (!lettersContainer) return;
+            
+            if (gameState.collectedLetters.length === 0) {
+                lettersContainer.innerHTML = '<p class="letters-hint">Completa desafíos para recolectar letras</p>';
+            } else {
+                // Obtener solo las letras (sin orden)
+                const letters = gameState.collectedLetters.map(item => item.letter);
+                
+                // Mezclar las letras aleatoriamente para no dar pistas del orden
+                const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
+                
+                // Generar HTML mostrando las letras mezcladas
+                const lettersHTML = shuffledLetters.map(letter => 
+                    `<span class="letter-badge">${letter}</span>`
+                ).join('');
+                
+                lettersContainer.innerHTML = `
+                    <p class="letters-hint">Letras recolectadas (${gameState.collectedLetters.length}/${challenges.length}):</p>
+                    <div class="letters-list">${lettersHTML}</div>
+                    <p class="letters-hint-small">¡Ordénalas para formar la palabra secreta!</p>
+                `;
+            }
+        }
+
+        // Mostrar overlay cuando intentan abrir un desafío bloqueado
+        function showChallengeBlockedOverlay(challengeId) {
+            const overlay = document.getElementById('penalty-overlay');
+            if (!overlay) return;
+            
+            const endTime = gameState.blockedChallenges.get(challengeId);
+            overlay.style.display = 'flex';
+            updateBlockedOverlayCountdown(challengeId, endTime);
+        }
+
+        // Actualizar cuenta regresiva en el overlay de desafío bloqueado
+        function updateBlockedOverlayCountdown(challengeId, endTime) {
+            const overlay = document.getElementById('penalty-overlay');
+            const countdownEl = document.getElementById('penalty-countdown');
+            
+            if (!overlay || !countdownEl) return;
+            
+            const now = Date.now();
+            const remaining = Math.max(0, Math.ceil((endTime - now) / 1000));
+            
+            if (remaining > 0) {
+                countdownEl.textContent = remaining;
+                setTimeout(() => updateBlockedOverlayCountdown(challengeId, endTime), 100);
+            } else {
+                gameState.blockedChallenges.delete(challengeId);
+                overlay.style.display = 'none';
+                renderChallenges(); // Re-renderizar para quitar el estado bloqueado
+            }
+        }
+
+        // Actualizar progreso
+        function updateProgress() {
+            const completed = gameState.completedChallenges.size;
+            const total = challenges.length;
+            const percentage = (completed / total) * 100;
+
+            document.getElementById('progress-fill').style.width = percentage + '%';
+            document.getElementById('progress-text').textContent = `${completed}/${total} completados`;
+        }
+
+        // Finalizar juego - Mostrar pantalla de palabra secreta
+        function finishGame() {
+            // Obtener todas las letras recolectadas
+            const letters = gameState.collectedLetters.map(item => item.letter);
+            
+            // Mezclar las letras aleatoriamente para el desafío final
+            const shuffledLetters = [...letters].sort(() => Math.random() - 0.5);
+            
+            // Generar HTML mostrando las letras mezcladas
+            const lettersHTML = shuffledLetters.map(letter => 
+                `<span class="letter-badge-large">${letter}</span>`
+            ).join('');
+            
+            document.getElementById('final-letters-display').innerHTML = lettersHTML;
+            document.getElementById('secret-word-input').value = '';
+            document.getElementById('word-feedback').textContent = '';
+            
+            showScreen('word-challenge-screen');
+        }
+
+        // Verificar palabra secreta
+        function checkSecretWord() {
+            const input = document.getElementById('secret-word-input');
+            const feedback = document.getElementById('word-feedback');
+            const userWord = input.value.trim().toUpperCase();
+            
+            if (!userWord) {
+                feedback.textContent = '⚠️ Por favor, escribe una palabra';
+                feedback.className = 'word-feedback incorrect';
+                return;
+            }
+            
+            if (userWord === SECRET_WORD) {
+                feedback.textContent = '✅ ¡Correcto! Has escapado';
+                feedback.className = 'word-feedback correct';
+                
+                setTimeout(() => {
+                    showVictoryScreen();
+                }, 2000);
+            } else {
+                feedback.textContent = '❌ Palabra incorrecta. Intenta de nuevo';
+                feedback.className = 'word-feedback incorrect';
+                input.value = '';
+            }
+        }
+
+        // Mostrar pantalla de victoria final
+        function showVictoryScreen() {
+            const endTime = Date.now();
+            const elapsedTime = endTime - gameState.startTime;
+            const totalTimeWithPenalty = Math.floor((elapsedTime + gameState.penaltyTime) / 1000);
+            const minutes = Math.floor(totalTimeWithPenalty / 60);
+            const seconds = totalTimeWithPenalty % 60;
+            const penaltySeconds = Math.floor(gameState.penaltyTime / 1000);
+
+            document.getElementById('total-time').textContent = 
+                `${minutes} minutos y ${seconds} segundos`;
+            
+            document.getElementById('penalty-time').textContent = 
+                `${penaltySeconds} segundos`;
+            
+            document.getElementById('secret-word-reveal').textContent = SECRET_WORD;
+
+            showScreen('victory-screen');
+        }
+
+        // Reiniciar juego
+        function restartGame() {
+            gameState.completedChallenges.clear();
+            gameState.currentChallenge = null;
+            gameState.selectedAnswer = null;
+            gameState.penaltyTime = 0;
+            gameState.blockedChallenges.clear();
+            gameState.collectedLetters = [];
+            document.getElementById('finish-btn').style.display = 'none';
+            const overlay = document.getElementById('penalty-overlay');
+            if (overlay) overlay.style.display = 'none';
+            updateLettersDisplay();
+            showScreen('start-screen');
+        }
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            showScreen('start-screen');
+        });
+    </script>
+</body>
+</html>
